@@ -48,13 +48,14 @@
             slot-scope="scope"
           >{{ scope.row.status==0?'未开始':(scope.row.status==1?'进行':'结束')}}</template>
         </el-table-column>
-        <el-table-column label="选项" width="180" align="center">
+        <el-table-column label="选项" width="200" align="center">
           <template slot-scope="scope">
             <el-button
               type="text"
               icon="el-icon-edit"
               @click="handleEdit(scope.$index, scope.row)"
             >编辑</el-button>
+            <el-button type="text" icon="el-icon-user" @click="handleTe(scope.$index, scope.row)">添加</el-button>
             <el-button
               type="text"
               icon="el-icon-delete"
@@ -99,6 +100,26 @@
         <el-form-item label="地点">
           <el-input placeholder="请输入内容" v-model="form.place"></el-input>
         </el-form-item>
+        <el-form-item label="时间1">
+          <el-select v-model="form.course_day" placeholder="上课时间">
+            <el-option
+              v-for="item in course_days"
+              :key="item.id"
+              :label="item.name"
+              :value="item.id"
+            ></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="时间2">
+          <el-select v-model="form.course_time" placeholder="上课时间">
+            <el-option
+              v-for="item in course_times"
+              :key="item.id"
+              :label="item.name"
+              :value="item.id"
+            ></el-option>
+          </el-select>
+        </el-form-item>
       </el-form>
       <span slot="footer" class="dialog-footer">
         <el-button @click="editVisible = false">取 消</el-button>
@@ -128,10 +149,64 @@
         <el-form-item label="地点">
           <el-input placeholder="请输入内容" v-model="form.place"></el-input>
         </el-form-item>
+        <el-form-item label="时间1">
+          <el-select v-model="form.course_day" placeholder="上课时间">
+            <el-option
+              v-for="item in course_days"
+              :key="item.id"
+              :label="item.name"
+              :value="item.id"
+            ></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="时间2">
+          <el-select v-model="form.course_time" placeholder="上课时间">
+            <el-option
+              v-for="item in course_times"
+              :key="item.id"
+              :label="item.name"
+              :value="item.id"
+            ></el-option>
+          </el-select>
+        </el-form-item>
       </el-form>
       <span slot="footer" class="dialog-footer">
         <el-button @click="addVisible = false">取 消</el-button>
         <el-button type="primary" @click="saveAdd">确 定</el-button>
+      </span>
+    </el-dialog>
+
+    <!-- 授课弹出框 -->
+    <el-dialog title="教师列表" :visible.sync="teVisible" width="400px">
+      <div class="handle-box">
+        <el-select v-model="form.teacher_id" placeholder="请选择老师">
+          <el-option v-for="item in teacherList" :key="item.id" :label="item.name" :value="item.id"></el-option>
+        </el-select>
+        <el-button type="success" icon="el-icon-plus" size="small" @click="AddT">新建</el-button>
+      </div>
+      <el-table
+        :data="teachers"
+        stripe
+        class="table"
+        header-cell-class-name="table-header"
+        :default-sort="{prop: 'account', order: 'ascending'}"
+      >
+        <el-table-column prop="account" label="工号" sortable align="center"></el-table-column>
+        <el-table-column prop="name" label="姓名" sortable align="center"></el-table-column>
+        <el-table-column label="选项" align="center">
+          <template slot-scope="scope">
+            <el-button
+              type="text"
+              icon="el-icon-delete"
+              class="red"
+              v-if="user_id != scope.row.user_id"
+              @click="DeleteTe(scope.$index, scope.row)"
+            >删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+      <span slot="footer" class="dialog-footer">
+        <el-button type="primary" @click="teVisible = false">确 定</el-button>
       </span>
     </el-dialog>
   </div>
@@ -150,9 +225,12 @@ export default {
       tableData: [],
       depart_id: 1,
       delList: [],
+      user_id: 0,
       editVisible: false,
       addVisible: false,
+      teVisible: false,
       pageTotal: 0,
+      teacherList: [],
       form: {},
       idx: -1,
       id: -1,
@@ -166,8 +244,62 @@ export default {
         { text: "1", value: 1 },
         { text: "2", value: 2 }
       ],
+      course_id: 0,
       options: [],
-      spec: []
+      spec: [],
+      teachers: [],
+      course_days: [
+        {
+          id: "1",
+          name: "星期一"
+        },
+        {
+          id: "2",
+          name: "星期二"
+        },
+        {
+          id: "3",
+          name: "星期三"
+        },
+        {
+          id: "4",
+          name: "星期四"
+        },
+        {
+          id: "5",
+          name: "星期五"
+        }
+      ],
+      course_times: [
+        {
+          id: "1",
+          name: "1、2节"
+        },
+        {
+          id: "2",
+          name: "3、4节"
+        },
+        {
+          id: "3",
+          name: "3、4、5节"
+        },
+        {
+          id: "4",
+          name: "6、7节"
+        },
+        {
+          id: "5",
+          name: "6、7、8节"
+        },
+        {
+          id: "6",
+          name: "8、9节"
+        },
+        {
+          id: "7",
+          name: "10、11、12节"
+        }
+      ]
     };
   },
   mounted: function() {
@@ -177,6 +309,7 @@ export default {
     // 获取数据
     getData() {
       let id = localStorage.getItem("id");
+      this.user_id = localStorage.getItem("id");
       var url = "http://localhost:8082/info/getCourseById?id=" + id;
       this.$axios.get(url).then(res => {
         //console.log(res);
@@ -189,6 +322,15 @@ export default {
         .then(res => {
           //console.log(res);
           this.depart_id = res.data.data.list[0].depart_id;
+          this.$axios
+            .get(
+              "http://localhost:8082/info/getSpec?depart_id=" + this.depart_id
+            )
+            .then(res => {
+              //console.log(res);
+              this.spec = res.data.data.list;
+              //console.log(this.depart_id);
+            });
           //console.log(this.depart_id);
         });
 
@@ -198,6 +340,17 @@ export default {
           //console.log(res);
           this.spec = res.data.data.list;
           //console.log(this.depart_id);
+        });
+
+      this.$axios
+        .get(
+          "http://localhost:8082/user/getTeacherByDepart?depart_id=" +
+            this.depart_id
+        )
+        .then(res => {
+          //console.log(res);
+          this.teacherList = res.data.data.list;
+          //console.log(this.options);
         });
     },
     // 删除操作
@@ -249,7 +402,9 @@ export default {
         s_id: this.form.s_id,
         des: this.form.des,
         sorce: this.form.sorce,
-        place: this.form.place
+        place: this.form.place,
+        course_day: this.form.course_day,
+        course_time: this.form.course_time
       };
       console.log(item);
       this.$axios
@@ -320,6 +475,87 @@ export default {
     },
     filterSemeter(value, row) {
       return row.semester == value;
+    },
+    handleTe(index, row) {
+      this.idx = index;
+      this.form = JSON.parse(JSON.stringify(row));
+      this.course_id = this.form.id;
+      //console.log(this.form);
+      this.$axios
+        .get("http://localhost:8082/info/getTeacherByCourse?course=" + row.id)
+        .then(res => {
+          //console.log(res);
+          this.teachers = res.data.data.list;
+          //console.log(this.options);
+        });
+      this.teVisible = true;
+    },
+    AddT() {
+      const h = this.$createElement;
+      //console.log(this.form);
+      if (this.form.teacher_id == null) return;
+      let item = {
+        teacher_id: this.form.teacher_id,
+        course: this.form.id
+      };
+      this.$axios
+        .post("http://localhost:8082/info/newTe", this.qs.stringify(item))
+        .then(res => {
+          //console.log(res);
+          if (res.data.code == 200) {
+            //重新加载列表
+            this.$axios
+              .get(
+                "http://localhost:8082/info/getTeacherByCourse?course=" +
+                  this.course_id
+              )
+              .then(res => {
+                //console.log(res);
+                this.teachers = res.data.data.list;
+              });
+            this.$notify.success({
+              title: "成功",
+              message: h("i", { style: "color: teal" }, res.data.msg)
+            });
+            //location.reload();
+          } else {
+            this.$notify.error({
+              title: "错误",
+              message: h("i", { style: "color: teal" }, "创建失败")
+            });
+          }
+        })
+        .catch(error => {
+          console.log(error); //请求失败返回的数据
+        });
+    },
+    DeleteTe(index, row) {
+      const h = this.$createElement;
+      let id = row.id;
+      //console.log(row.id);
+      this.$axios
+        .get("http://localhost:8082/info/deleteTe?id=" + id)
+        .then(res => {
+          if (res.data.code == 200) {
+            //重新加载列表
+            this.$axios
+              .get("http://localhost:8082/info/getTeacherByCourse?course=" + id)
+              .then(res => {
+                //console.log(res.data.data.list);
+                this.teachers = res.data.data.list;
+              });
+            this.$notify.success({
+              title: "成功",
+              message: h("i", { style: "color: teal" }, res.data.msg)
+            });
+            //location.reload();
+          } else {
+            this.$notify.error({
+              title: "错误",
+              message: h("i", { style: "color: teal" }, res.data.msg)
+            });
+          }
+        });
     }
   }
 };

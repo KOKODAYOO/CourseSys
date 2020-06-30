@@ -127,6 +127,12 @@ export default {
           });
       });
 
+      this.$axios.get("http://localhost:8082/info/getStatus").then(res => {
+        //console.log(res);
+        this.status = res.data.data.status.course_status;
+        //console.log(this.status);
+      });
+
       this.$axios
         .get("http://localhost:8082/stu/getSelectedClassBySid?id=" + id)
         .then(res => {

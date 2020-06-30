@@ -84,10 +84,15 @@
             <el-option v-for="item in spec" :key="item.id" :label="item.name" :value="item.id"></el-option>
           </el-select>
         </el-form-item>
+        <el-form-item label="学年">
+          <el-select v-model="form.enrollment_time" placeholder="请选择">
+            <el-option v-for="item in sch_years" :key="item.id" :label="item.name" :value="item.id"></el-option>
+          </el-select>
+        </el-form-item>
         <el-form-item label="班级">
           <el-select
             v-model="form.class_id"
-            @visible-change="showClass($event,form.s_id,form.depart_id)"
+            @visible-change="showClass($event,form.s_id,form.depart_id,form.enrollment_time)"
             placeholder="请选择"
           >
             <el-option v-for="item in classes" :key="item.id" :label="item.name" :value="item.id"></el-option>
@@ -131,10 +136,15 @@
             <el-option v-for="item in spec" :key="item.id" :label="item.name" :value="item.id"></el-option>
           </el-select>
         </el-form-item>
+        <el-form-item label="学年">
+          <el-select v-model="form.school_year" placeholder="请选择">
+            <el-option v-for="item in sch_years" :key="item.id" :label="item.name" :value="item.id"></el-option>
+          </el-select>
+        </el-form-item>
         <el-form-item label="班级">
           <el-select
             v-model="form.class_id"
-            @visible-change="showClass($event,form.s_id,form.depart_id)"
+            @visible-change="showClass($event,form.s_id,form.depart_id,form.school_year)"
             placeholder="请选择"
           >
             <el-option v-for="item in classes" :key="item.id" :label="item.name" :value="item.id"></el-option>
@@ -159,7 +169,7 @@ export default {
     return {
       query: {
         name: "",
-        account:"",
+        account: "",
         pageIndex: 1,
         pageSize: 10
       },
@@ -179,6 +189,24 @@ export default {
         {
           id: 1,
           label: "女"
+        }
+      ],
+      sch_years: [
+        {
+          id: 2017,
+          label: "2017级"
+        },
+        {
+          id: 2018,
+          label: "2018级"
+        },
+        {
+          id: 2019,
+          label: "2019级"
+        },
+        {
+          id: 2020,
+          label: "2020级"
         }
       ],
       departs: [],
@@ -230,7 +258,7 @@ export default {
     handleEdit(index, row) {
       this.idx = index;
       this.form = JSON.parse(JSON.stringify(row));
-      //console.log(this.form);
+      console.log(this.form);
       this.$axios
         .get("http://localhost:8082/info/getSpec?depart_id=" + row.depart_id)
         .then(res => {
@@ -238,13 +266,15 @@ export default {
           this.spec = res.data.data.list;
           //console.log(this.options);
         });
-        //
+      //
       this.$axios
         .get(
           "http://localhost:8082/info/getClass?depart_id=" +
             row.depart_id +
             "&s_id=" +
-            row.s_id
+            row.s_id +
+            "&school_year=" +
+            row.enrollment_time
         )
         .then(res => {
           //console.log(res);
@@ -268,10 +298,10 @@ export default {
         name: this.form.name,
         password: this.form.password,
         gender: this.form.gender,
-        s_id :this.form.s_id,
-        depart_id:this.form.depart_id,
-        class_id:this.form.class_id,
-        user_id:this.form.id
+        s_id: this.form.s_id,
+        depart_id: this.form.depart_id,
+        class_id: this.form.class_id,
+        user_id: this.form.id
       };
       this.$axios
         .post("http://localhost:8082/user/modifyStu", this.qs.stringify(item))
@@ -299,7 +329,10 @@ export default {
       this.addVisible = false;
       const h = this.$createElement;
       this.$axios
-        .post("http://localhost:8082/user/newStudent", this.qs.stringify(this.form))
+        .post(
+          "http://localhost:8082/user/newStudent",
+          this.qs.stringify(this.form)
+        )
         .then(res => {
           console.log(res);
           if (res.data.code == 200) {
@@ -324,7 +357,7 @@ export default {
       this.$set(this.query, "pageIndex", val);
       this.getData();
     },
-    showClass(callback, s_id, depart_id) {
+    showClass(callback, s_id, depart_id, school_year) {
       if (callback) {
         //console.log(s_id,depart_id);
         const h = this.$createElement;
@@ -340,7 +373,9 @@ export default {
             "http://localhost:8082/info/getClass?depart_id=" +
               depart_id +
               "&s_id=" +
-              s_id
+              s_id +
+              "&school_year=" +
+              school_year
           )
           .then(res => {
             //console.log(res);

@@ -61,6 +61,12 @@
               icon="el-icon-edit"
               @click="handleEdit(scope.$index, scope.row)"
             >登记成绩</el-button>
+            <el-button
+              type="text"
+              icon="el-icon-warning"
+              class="red"
+              @click="over(scope.$index, scope.row)"
+            >结课</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -143,9 +149,10 @@ export default {
     // 获取数据
     getData() {
       let id = localStorage.getItem("id");
+      console.log(id);
       var url = "http://localhost:8082/info/getCourseById?id=" + id;
       this.$axios.get(url).then(res => {
-        //console.log(res);
+        
         this.tableData = res.data.data.list;
         this.pageTotal = this.tableData.length || 10;
       });
@@ -215,7 +222,7 @@ export default {
               title: "成功",
               message: h("i", { style: "color: teal" }, res.data.msg)
             });
-            //location.reload();
+            location.reload();
           } else {
             this.$notify.error({
               title: "错误",
@@ -237,6 +244,25 @@ export default {
     },
     filterSemeter(value, row) {
       return row.semester == value;
+    },
+    over(index,row) {
+      const h = this.$createElement;
+      this.$axios
+        .get("http://localhost:8082/info/overCourse?id=" + row.id)
+        .then(res => {
+           if (res.data.code == 200) {
+            this.$notify.success({
+              title: "成功",
+              message: h("i", { style: "color: teal" }, res.data.msg)
+            });
+            location.reload();
+          } else {
+            this.$notify.error({
+              title: "错误",
+              message: h("i", { style: "color: teal" }, "修改失败")
+            });
+          }
+        });
     }
   }
 };

@@ -108,6 +108,7 @@ export default {
       delList: [],
       editVisible: false,
       addVisible: false,
+      ids:[],
       pageTotal: 0,
       form: {},
       idx: -1,
@@ -171,8 +172,13 @@ export default {
     // 编辑操作
     handleEdit() {
       const h = this.$createElement;
+      this.ids = [];
+      for(var i = 0;i<this.tableData.length;i++){
+        if(this.tableData[i].status == 0) this.ids.push(this.tableData[i].id);
+      }
+      //console.log(this.ids);
       this.$axios
-        .get("http://localhost:8082/info/changeStatus?status="+this.status)
+        .post("http://localhost:8082/info/changeStatus?status="+this.status,this.ids)
         .then(res => {
           //console.log(res);
           if (res.data.code == 200) {
